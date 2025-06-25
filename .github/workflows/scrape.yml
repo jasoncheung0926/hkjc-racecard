@@ -1,13 +1,24 @@
-name: CI stub
+name: Nightly scrape
 
-on: [workflow_dispatch]
+on:
+  schedule: [{ cron: '0 16 * * *' }]
+  workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m racecard.scraper
+          python -m racecard.normaliser
+          python -m racecard.generator $(date -u +%Y-%m-%d)
+      - name: Deploy Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          python-version: '3.11'
-      - run: echo "CI is alive"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
